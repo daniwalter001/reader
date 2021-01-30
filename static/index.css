@@ -1,0 +1,48 @@
+body {
+  max-height: 100vh;
+  display: grid;
+  grid-template-rows: 20px auto;
+  padding: 10px;
+  background-color: rgb(91, 100, 97);
+  color: white;
+}
+
+#reader {
+  display: grid;
+  column-gap: 10px;
+  grid-template-columns: 30% 70%;
+  border: 1px solid black;
+}
+
+#left-side {
+  display: grid;
+  grid-template-rows: 180px 70vh;
+  padding: 5px;
+}
+
+#right-side {
+  padding: 5px;
+  height: calc(180px + 70vh);
+  overflow-y: auto;
+}
+
+#left-side #bottom {
+  overflow-y: auto;
+}
+
+#left-side #bottom > div:nth-child(2) > * {
+  padding: 5px;
+  margin: 5px;
+  box-shadow: 0px 0px 3px black;
+  font-weight: bold;
+  list-style: none;
+  cursor: pointer;
+}
+.manga-pic {
+  width: 100%;
+  height: auto;
+}
+
+#ID {
+  color: white;
+}

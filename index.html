@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./static/semantic/semantic.min.css" />
+    <link rel="stylesheet" href="./static/index.css" />
+    <script>
+      if (typeof module === "object") {
+        window.module = module;
+        module = undefined;
+      }
+    </script>
+    <!-- normal script imports etc  -->
+    <script src="./static/js/jquery.js"></script>
+    <script src="./static/semantic/semantic.min.js"></script>
+    <!-- Insert this line after script imports -->
+    <script>
+      if (window.module) module = window.module;
+    </script>
+
+    <title>Reader</title>
+  </head>
+
+  <body>
+    <div></div>
+    <div id="reader" class="fluid ui container">
+      <div id="left-side">
+        <div id="top">
+          <form class="ui form">
+            <div class="field">
+              <label> Select Manga </label>
+              <select
+                autofocus
+                class=""
+                name="manga-list"
+                class="ui dropdown"
+                id="manga-list"
+              >
+                <option value="">---</option>
+              </select>
+            </div>
+            <div class="field">
+              <input
+                type="text"
+                name="search"
+                id="search"
+                placeholder="Taper pour rechercher le chapitre"
+              />
+            </div>
+          </form>
+          <div class="ui dividing header" id="ID"></div>
+        </div>
+        <div id="bottom">
+          <div></div>
+          <div id="chapter-list"></div>
+        </div>
+      </div>
+
+      <div id="right-side"></div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      $("form").submit(function (e) {
+        e.preventDefault();
+      });
+
+      //Chargement de la liste des mangas
+
+      let mangas = ipcRenderer.sendSync("sendManga", "");
+      let chapterList = [];
+      let searchchapterList = [];
+      let chapterContent;
+
+      for (let index = 0; index < mangas.length; index++) {
+        const element = mangas[index];
+        $("#manga-list").append("<option>" + element + "</option>");
+      }
+
+      // Handle de la selection d'un manga et l'affichage des chapitres
+
+      $("#manga-list").on("click", function (event) {
+        $("#ID").html(event.target.value);
+        $("#bottom #chapter-list").html("");
+        $("#right-side").html("");
+
+        chapterList = ipcRenderer.sendSync("mangaSelected", event.target.value);
+
+        iEvent(chapterList);
+      });
+
+      // Se charge de la recherche
+
+      $("#search").keyup(function (e) {
+        let search = $("#search").val();
+        $("#bottom #chapter-list").html("");
+        $("#right-side").html("");
+        if ($("#ID").text() != "") {
+          if (search != "") {
+            chapterList = ipcRenderer
+              .sendSync("mangaSelected", $("#ID").text())
+              .filter((element) => element.includes(search));
+          } else {
+            chapterList = ipcRenderer.sendSync(
+              "mangaSelected",
+              $("#ID").text()
+            );
+          }
+          iEvent(chapterList);
+        }
+      });
+
+      // Afichage des chapitre et images
+
+      let iEvent = (list = []) => {
+        for (let index = 0; index < list.length; index++) {
+          const element = list[index];
+          $("#bottom #chapter-list").append("<li>" + element + "</li>");
+        }
+        let li = document.querySelectorAll("#chapter-list li");
+
+        for (let index = 0; index < li.length; index++) {
+          const element = li[index];
+
+          element.addEventListener("click", function (e) {
+            chapterContent = ipcRenderer.sendSync("chapterSelected", {
+              mangaName: $("#ID").text().trim(),
+              chapterName: e.target.textContent,
+            });
+
+            $("#right-side").html("");
+
+            for (
+              let index = 0;
+              index < chapterContent["chapterContent"].length;
+              index++
+            ) {
+              const element = chapterContent["chapterContent"][index];
+              $("#right-side").append(
+                "<img class='manga-pic' src=\"./" +
+                  chapterContent["folder"] +
+                  "/" +
+                  element +
+                  '" />'
+              );
+            }
+          });
+        }
+      };
+    </script>
+  </body>
+</html>
