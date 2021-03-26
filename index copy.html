@@ -64,34 +64,28 @@
 
     <script>
       const { ipcRenderer } = require("electron");
-      const path = require("path");
 
       $("form").submit(function (e) {
         e.preventDefault();
       });
 
-      //############################# Init #############################
+      //Chargement de la liste des mangas
 
       let mangas = ipcRenderer.sendSync("sendManga", "");
       let chapterList = [];
       let searchchapterList = [];
       let chapterContent;
-      let ongoingType = null;
-
-      // ############################# Mangas List #############################
 
       for (let index = 0; index < mangas.length; index++) {
         const element = mangas[index];
+        console.log(element);
         if (element && element.data) {
           for (let index = 0; index < element.data.length; index++) {
             const el = element.data[index];
-            $("#manga-list").append(
-              "<option value= " +
-                JSON.stringify({
-                  name: encodeURIComponent(el),
-                  type: encodeURIComponent(element.type),
-                }) +
-                " >" +
+            $("#manga-list").add(
+              "<option value='" +
+                JSON.stringify({ name: el, type: element.type }) +
+                "' >" +
                 el +
                 "</option>"
             );
@@ -99,78 +93,59 @@
         }
       }
 
-      // ############################# Chapters Lists ##########################################################
+      // Handle de la selection d'un manga et l'affichage des chapitres
 
-      $("#manga-list").on("click", function (e) {
-        ongoingType = JSON.parse(e.target.value).type;
+      $("#manga-list").on("click", function (event) {
+        $("#ID").html(event.target.value);
+        $("#bottom #chapter-list").html("");
         $("#right-side").html("");
-        chapitreList = ipcRenderer.sendSync(
-          "mangaSelected",
-          JSON.parse(e.target.value)
-        );
-        $("#ID").html(decodeURIComponent(JSON.parse(e.target.value).name));
-        $("#chapter-list").html("");
 
-        iEvent(chapitreList);
-        $("#floating-panel").fadeOut();
+        chapterList = ipcRenderer.sendSync("mangaSelected", event.target.value);
+
+        iEvent(chapterList);
       });
 
-      //################################ Recherche ds la liste de chapitre ################################################
+      // Se charge de la recherche
 
       $("#search").keyup(function (e) {
         let search = $("#search").val();
         $("#bottom #chapter-list").html("");
         $("#right-side").html("");
-
         if ($("#ID").text() != "") {
           if (search != "") {
             chapterList = ipcRenderer
-              .sendSync("mangaSelected", JSON.parse($("#manga-list").val()))
+              .sendSync("mangaSelected", $("#ID").text())
               .filter((element) => element.includes(search));
           } else {
             chapterList = ipcRenderer.sendSync(
               "mangaSelected",
-              JSON.parse($("#manga-list").val())
+              $("#ID").text()
             );
           }
-
           iEvent(chapterList);
         }
       });
 
-      // ############################# Function that handle the pic display and embed pdf #########################################
+      // Afichage des chapitre et images
 
       let iEvent = (list = []) => {
-        for (let i = 0; i < list.length; i++) {
-          let element = list[i];
-          $("#chapter-list").append("<li>" + element + "</li>");
+        for (let index = 0; index < list.length; index++) {
+          const element = list[index];
+          $("#bottom #chapter-list").append("<li>" + element + "</li>");
         }
+        let li = document.querySelectorAll("#chapter-list li");
 
-        let mangaName = $("#ID").text();
-        let mainPath = ipcRenderer.sendSync("mainPath", null);
-        console.log(ongoingType);
-        $("#chapter-list li").on("click", function (e) {
-          $("#right-side").html("");
-          if (ongoingType == "pdf") {
-            $("#right-side").html(
-              "<embed src=" +
-                path.join(
-                  mainPath,
-                  ongoingType,
-                  mangaName,
-                  encodeURIComponent(e.target.textContent)
-                ) +
-                " type='application/pdf' height='100%' width='100%' ></embed>"
-            );
-            $("#floating-panel").fadeOut();
-            $("#chapter-name").html("");
-          } else if (ongoingType == "img") {
-            $("#right-side").html("");
+        for (let index = 0; index < li.length; index++) {
+          const element = li[index];
+
+          element.addEventListener("click", function (e) {
             chapterContent = ipcRenderer.sendSync("chapterSelected", {
               mangaName: $("#ID").text().trim(),
               chapterName: e.target.textContent,
-              type: ongoingType,
             });
+
+            $("#right-side").html("");
+
             for (
               let index = 0;
               index < chapterContent["chapterContent"].length;
@@ -178,18 +153,18 @@
             ) {
               const element = chapterContent["chapterContent"][index];
               $("#right-side").append(
-                "<img class='manga-pic' src=" +
-                  path.join(
-                    encodeURI(chapterContent["folder"]),
-                    encodeURI(element)
-                  ) +
-                  " />"
+                "<img class='manga-pic' src=\"./" +
+                  encodeURI(chapterContent["folder"]) +
+                  "/" +
+                  encodeURI(element) +
+                  '" />'
               );
             }
+
             $("#chapter-name").html(e.target.textContent);
             $("#floating-panel").fadeIn();
-          }
-        });
+          });
+        }
       };
     </script>
   </body>

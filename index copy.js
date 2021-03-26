@@ -3,6 +3,7 @@ const url = require("url");
 const path = require("path");
 const fs = require("fs");
 const console = require("console");
+const { Console } = require("console");
 
 const { app, BrowserWindow, Menu, ipcMain } = electron;
 
@@ -83,10 +84,16 @@ if (fs.readdirSync(mainPath2, "utf-8")) {
     }
   }
 }
+// console.log(mangas_2);
 
-ipcMain.on("mainPath", function (e, data) {
-  e.returnValue = mainPath2;
-});
+// ----------------------------------------------------
+
+// if (!fs.existsSync("./static/content/Mangas/img")) {
+//   fs.mkdirSync("./static/content/Mangas/img", { recursive: true });
+// }
+// let mainPath = "./static/content/Mangas/img";
+
+// let mangas = fs.readdirSync(mainPath, "utf-8");
 
 if (mangas_2) {
   ipcMain.on("sendManga", function (e, data) {
@@ -98,21 +105,12 @@ if (mangas_2) {
 
 ipcMain.on("mangaSelected", function (e, data) {
   if (data != "") {
-    let chaptersList = fs.readdirSync(
-      path.join(
-        mainPath2,
-        decodeURIComponent(data.type),
-        decodeURIComponent(data.name)
-      )
-    );
-    // console.log(chaptersList);
-
+    let chaptersList = fs.readdirSync(path.join(mainPath, data));
     let sanitizeName = (list, paths) => {
       list.forEach((folder, i) => {
-        if (folder.includes("?") || folder.includes("_")) {
-          console.log(folder);
+        if (folder.includes("?")) {
+          // console.log(folder);
           let newName = folder.replace(/\?/g, "");
-          newName = folder.replace(/_/, ":");
           fs.renameSync(paths + "/" + folder, paths + "/" + newName);
           chaptersList[i] = newName;
         }
@@ -120,14 +118,7 @@ ipcMain.on("mangaSelected", function (e, data) {
     };
 
     (async () => {
-      await sanitizeName(
-        chaptersList,
-        path.join(
-          mainPath2,
-          decodeURIComponent(data.type),
-          decodeURIComponent(data.name)
-        )
-      );
+      await sanitizeName(chaptersList, path.join(mainPath, data));
     })();
 
     chaptersList = chaptersList.sort(function (a, b) {
@@ -167,15 +158,10 @@ ipcMain.on("mangaSelected", function (e, data) {
 
 ipcMain.on("chapterSelected", function (e, data) {
   let chapterContent = fs.readdirSync(
-    path.join(mainPath2, data["type"], data["mangaName"], data["chapterName"])
+    path.join(mainPath, data["mangaName"], data["chapterName"])
   );
   e.returnValue = {
-    folder: path.join(
-      mainPath2,
-      data["type"],
-      data["mangaName"],
-      data["chapterName"]
-    ),
+    folder: path.join(mainPath, data["mangaName"], data["chapterName"]),
     chapterContent,
   };
 });
@@ -208,5 +194,3 @@ const mainMenuTemplate = [
     },
   },
 ];
-
-
