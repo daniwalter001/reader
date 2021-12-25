@@ -16,6 +16,7 @@ app.on("ready", function () {
     height: 700,
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 
@@ -37,12 +38,15 @@ app.on("ready", function () {
 
 // Main Functions
 
-let mainPath = "./static/content/Mangas";
-
+let mainPath = path.join(process.env.HOME, "Mangas");
 const mangas = fs.readdirSync(mainPath, "utf-8");
 
+let mangas_ = mangas.filter((manga) => {
+  return fs.statSync(path.join(mainPath, manga)).isDirectory();
+});
+
 ipcMain.on("sendManga", function (e, data) {
-  e.returnValue = mangas;
+  e.returnValue = mangas_;
 });
 
 // mangaSelected
@@ -51,33 +55,17 @@ ipcMain.on("mangaSelected", function (e, data) {
   if (data != "") {
     let chaptersList = fs.readdirSync(path.join(mainPath, data));
     chaptersList = chaptersList.sort(function (a, b) {
-      let a_;
-      let b_;
-
-      if (a.indexOf("Chapter") != -1) {
-        if (a.indexOf(":") != -1) {
-          a_ = a.substring(a.indexOf("Chapter") + 7, a.indexOf(":"));
-        } else {
-          a_ = a.substr(a.indexOf("Chapter") + 7);
-        }
-      } else {
-        return false;
-      }
-
-      if (b.indexOf("Chapter") != -1) {
-        if (b.indexOf(":") != -1) {
-          b_ = b.substring(b.indexOf("Chapter") + 7, b.indexOf(":"));
-        } else {
-          b_ = b.substr(b.indexOf("Chapter") + 7);
-        }
-      } else {
-        return false;
-      }
+      let a_ = a.match(/\d+/g) ? a.match(/\d+/g)[0] : 0;
+      let b_ = b.match(/\d+/g) ? b.match(/\d+/g)[0] : 0;
 
       return a_ - b_;
     });
 
-    e.returnValue = chaptersList;
+    let chaptersList_ = chaptersList.filter((chapter) => {
+      return fs.statSync(path.join(mainPath, data, chapter)).isDirectory();
+    });
+
+    e.returnValue = chaptersList_;
   } else {
     e.returnValue = null;
   }

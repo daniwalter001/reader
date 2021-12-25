@@ -81,7 +81,7 @@
 
       // Handle de la selection d'un manga et l'affichage des chapitres
 
-      $("#manga-list").on("click", function (event) {
+      $("#manga-list").on("change", function (event) {
         $("#ID").html(event.target.value);
         $("#bottom #chapter-list").html("");
         $("#right-side").html("");
@@ -139,7 +139,7 @@
             ) {
               const element = chapterContent["chapterContent"][index];
               $("#right-side").append(
-                "<img class='manga-pic' src=\"./" +
+                "<img class='manga-pic' src=\"" +
                   chapterContent["folder"] +
                   "/" +
                   element +
